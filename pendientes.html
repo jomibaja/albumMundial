@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Álbum Mundial 2026 🏆</title>
+<title>Pendientes — Álbum Mundial 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -30,7 +30,6 @@
     overflow-x: hidden;
   }
 
-  /* BG subtle noise */
   body::before {
     content: '';
     position: fixed;
@@ -44,7 +43,6 @@
 
   .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 16px 60px; }
 
-  /* HEADER */
   header {
     text-align: center;
     padding: 36px 0 28px;
@@ -64,7 +62,6 @@
   }
   header p { color: var(--muted); font-size: 14px; margin-top: 6px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
 
-  /* STATS BAR */
   .stats-bar {
     display: flex;
     gap: 16px;
@@ -90,7 +87,6 @@
   .stat-num.total { color: var(--accent2); }
   .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; font-weight: 700; }
 
-  /* PROGRESS BAR */
   .progress-wrap { margin-bottom: 36px; }
   .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; }
   .progress-track {
@@ -106,14 +102,12 @@
     transition: width 0.4s ease;
   }
 
-  /* GROUPS GRID */
   .groups-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
   }
 
-  /* GROUP CARD */
   .group-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -147,7 +141,6 @@
     border: 1px solid rgba(0,212,255,0.2);
   }
 
-  /* COUNTRY ROW */
   .country-row {
     display: flex;
     align-items: center;
@@ -177,7 +170,6 @@
   .chevron { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
   .country-row.active .chevron { transform: rotate(90deg); color: var(--accent2); }
 
-  /* STICKERS PANEL */
   .stickers-panel {
     display: none;
     padding: 16px 18px;
@@ -235,28 +227,18 @@
     line-height: 16px;
     text-align: center;
   }
-
-  /* MODAL overlay for sticker click feedback */
-  .toast {
-    position: fixed;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--green);
-    color: white;
-    padding: 10px 24px;
-    border-radius: 99px;
-    font-weight: 800;
-    font-size: 14px;
-    z-index: 1000;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  .sticker.readonly {
+    cursor: default;
     pointer-events: none;
-    white-space: nowrap;
   }
-  .toast.removed { background: var(--red); }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .sticker.readonly:hover {
+    border-color: var(--border);
+    transform: none;
+  }
+  .sticker.readonly.collected:hover {
+    border-color: var(--green);
+  }
 
-  /* RESET BTN */
   .actions {
     display: flex;
     justify-content: center;
@@ -264,37 +246,7 @@
     margin-bottom: 32px;
     flex-wrap: wrap;
   }
-  .btn {
-    padding: 10px 24px;
-    border-radius: 10px;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 800;
-    font-size: 13px;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-    letter-spacing: 0.5px;
-  }
-  .btn-outline {
-    background: transparent;
-    border: 1.5px solid var(--border);
-    color: var(--muted);
-  }
-  .btn-outline:hover { border-color: var(--red); color: var(--red); }
-  .btn-accent {
-    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
-    border: 1.5px solid rgba(0,212,255,0.3);
-    color: var(--accent2);
-  }
-  .btn-accent:hover { background: rgba(0,212,255,0.2); }
-  a.btn { text-decoration: none; display: inline-block; }
 
-  /* Search */
-  .search-wrap {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 28px;
-  }
   .search-input {
     background: var(--card);
     border: 1.5px solid var(--border);
@@ -311,68 +263,6 @@
   }
   .search-input::placeholder { color: var(--muted); }
   .search-input:focus { border-color: rgba(0,212,255,0.4); }
-
-  /* Modal QR */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px 32px;
-    text-align: center;
-    max-width: 340px;
-    width: 100%;
-    position: relative;
-  }
-  .modal-close {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 20px;
-    cursor: pointer;
-    line-height: 1;
-    padding: 4px;
-  }
-  .modal-close:hover { color: var(--text); }
-  .modal h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 2px;
-    color: var(--accent2);
-    margin-bottom: 8px;
-  }
-  .modal p {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 20px;
-    font-weight: 600;
-  }
-  .modal-qr {
-    background: white;
-    border-radius: 12px;
-    padding: 12px;
-    display: inline-block;
-    margin-bottom: 16px;
-  }
-  .modal-qr img { display: block; }
-  .modal-url {
-    font-size: 12px;
-    color: var(--accent2);
-    font-weight: 700;
-  }
 
   @media (max-width: 600px) {
     .groups-grid { grid-template-columns: 1fr; }
@@ -422,28 +312,8 @@
   <div class="actions">
     <input class="search-input" type="text" placeholder="🔍  Buscar país..." id="search-input" oninput="filterGroups(this.value)">
   </div>
-  <div class="actions">
-    <button class="btn btn-accent" onclick="exportData()">📤 Exportar progreso</button>
-    <button class="btn btn-accent" onclick="importData()">📥 Importar progreso</button>
-    <a href="pendientes.html" class="btn btn-accent">👁 Ver Pendientes</a>
-    <button class="btn btn-accent" onclick="openCompartirModal()">📲 Compartir pendientes</button>
-  </div>
 
   <div class="groups-grid" id="groups-grid"></div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<div class="modal-overlay" id="compartir-modal" onclick="closeCompartirModal(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="closeCompartirModal()" aria-label="Cerrar">&times;</button>
-    <h2>Compartir pendientes</h2>
-    <p>Escanea el código QR para ver las láminas pendientes</p>
-    <div class="modal-qr">
-      <img id="qr-share" src="" alt="Código QR" width="200" height="200">
-    </div>
-    <div class="modal-url">www.emol.cl</div>
-  </div>
 </div>
 
 <script>
@@ -467,9 +337,7 @@ const BIN_ID = '6a1b5856ddf5aa59f779a799';
 const MASTER_KEY = '$2a$10$TiMHyeYeMYC4FMZ7.t6A2.xbk5rdphAJ1Tz/DtoRdAP6ceEDxeYZq';
 const API_BASE = 'https://api.jsonbin.io/v3/b';
 
-// State: { 'A_México': Set([1,3,5,...]), ... }
 let state = {};
-let saveTimer = null;
 
 function getKey(groupId, countryName) {
   return `${groupId}_${countryName}`;
@@ -479,10 +347,9 @@ function showSyncStatus(status) {
   const el = document.getElementById('sync-status');
   if (!el) return;
   const map = {
-    saving: { text: '⏳ Guardando...', color: 'var(--accent)' },
-    saved:  { text: '☁️ Guardado', color: 'var(--green)' },
-    error:  { text: '❌ Error al guardar', color: 'var(--red)' },
-    loading:{ text: '⏳ Cargando...', color: 'var(--accent2)' },
+    readonly: { text: '👁 Solo lectura', color: 'var(--muted)' },
+    error:    { text: '❌ Error al cargar', color: 'var(--red)' },
+    loading:  { text: '⏳ Cargando...', color: 'var(--accent2)' },
   };
   const s = map[status] || {};
   el.textContent = s.text;
@@ -501,75 +368,27 @@ async function loadState() {
     for (const k in raw) {
       state[k] = new Set(raw[k]);
     }
-    showSyncStatus('saved');
+    showSyncStatus('readonly');
   } catch(e) {
-    // fallback localStorage
     try {
       const raw = localStorage.getItem('mundial2026_album');
       if (raw) {
         const parsed = JSON.parse(raw);
         state = {};
         for (const k in parsed) state[k] = new Set(parsed[k]);
+        showSyncStatus('readonly');
+      } else {
+        showSyncStatus('error');
       }
-    } catch(e2) { state = {}; }
-    showSyncStatus('error');
+    } catch(e2) {
+      state = {};
+      showSyncStatus('error');
+    }
   }
-}
-
-async function saveState() {
-  const toSave = {};
-  for (const k in state) toSave[k] = [...state[k]];
-
-  // always backup locally
-  localStorage.setItem('mundial2026_album', JSON.stringify(toSave));
-
-  showSyncStatus('saving');
-  try {
-    await fetch(`${API_BASE}/${BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': MASTER_KEY
-      },
-      body: JSON.stringify({ stickers: toSave })
-    });
-    showSyncStatus('saved');
-  } catch(e) {
-    showSyncStatus('error');
-  }
-}
-
-function saveStateDebounced() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => saveState(), 800);
 }
 
 function getCollected(key) {
   return state[key] ? state[key].size : 0;
-}
-
-function toggleSticker(key, num, stickerEl, rowEl) {
-  if (!state[key]) state[key] = new Set();
-  const had = state[key].has(num);
-  if (had) {
-    state[key].delete(num);
-    stickerEl.classList.remove('collected');
-    showToast(`Lámina #${num} eliminada`, true);
-  } else {
-    state[key].add(num);
-    stickerEl.classList.add('collected');
-    showToast(`🎉 Lámina #${num} conseguida!`, false);
-  }
-  saveStateDebounced();
-  updateStats();
-  updateGroupStats(key.split('_')[0]);
-  updateCountryRow(rowEl, key);
-}
-
-function updateCountryRow(rowEl, key) {
-  const collected = getCollected(key);
-  const miniEl = rowEl.querySelector('.mini-collected');
-  if (miniEl) miniEl.textContent = collected;
 }
 
 function updateGroupStats(groupId) {
@@ -597,15 +416,6 @@ function updateStats() {
   document.getElementById('stat-pct').textContent = pct + '%';
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('prog-label').textContent = `${total} / ${max}`;
-}
-
-let toastTimer;
-function showToast(msg, removed = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (removed ? ' removed' : '') + ' show';
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 1800);
 }
 
 function buildUI() {
@@ -653,18 +463,13 @@ function buildUI() {
 
       for (let i = 1; i <= STICKERS_PER_COUNTRY; i++) {
         const stickerEl = document.createElement('div');
-        stickerEl.className = 'sticker' + (state[key]?.has(i) ? ' collected' : '');
+        stickerEl.className = 'sticker readonly' + (state[key]?.has(i) ? ' collected' : '');
         stickerEl.textContent = i;
-        stickerEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleSticker(key, i, stickerEl, row);
-        });
         panel.appendChild(stickerEl);
       }
 
       row.addEventListener('click', () => {
         const isOpen = panel.classList.contains('open');
-        // Close all panels
         document.querySelectorAll('.stickers-panel.open').forEach(p => {
           p.classList.remove('open');
           p.previousElementSibling?.classList.remove('active');
@@ -700,65 +505,6 @@ function filterGroups(query) {
   });
 }
 
-const COMPARTIR_URL = 'https://www.emol.cl';
-
-function openCompartirModal() {
-  document.getElementById('qr-share').src =
-    'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(COMPARTIR_URL);
-  document.getElementById('compartir-modal').classList.add('open');
-}
-
-function closeCompartirModal(event) {
-  if (event && event.target !== event.currentTarget) return;
-  document.getElementById('compartir-modal').classList.remove('open');
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeCompartirModal();
-});
-
-function exportData() {
-  const toSave = {};
-  for (const k in state) toSave[k] = [...state[k]];
-  const json = JSON.stringify(toSave, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'album-mundial-2026.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('📤 Progreso exportado!');
-}
-
-function importData() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target.result);
-        state = {};
-        for (const k in parsed) state[k] = new Set(parsed[k]);
-        await saveState();
-        buildUI();
-        updateStats();
-        GROUPS.forEach(g => updateGroupStats(g.id));
-        showToast('📥 Progreso importado!');
-      } catch(err) {
-        alert('Error al importar el archivo. Verifica que sea válido.');
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-}
-
-// Init
 (async () => {
   await loadState();
   buildUI();
