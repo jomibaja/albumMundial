@@ -324,6 +324,7 @@
     <span class="trophy">🏆</span>
     <h1>ÁLBUM MUNDIAL 2026</h1>
     <p>México · USA · Canadá &nbsp;·&nbsp; 11 Jun – 19 Jul 2026</p>
+    <p id="sync-status" style="margin-top:8px;font-size:12px;font-weight:700;letter-spacing:1px;">⏳ Cargando...</p>
   </header>
 
   <div class="stats-bar">
@@ -386,34 +387,85 @@ const GROUPS = [
 ];
 
 const STICKERS_PER_COUNTRY = 20;
-const STORAGE_KEY = 'mundial2026_album';
+const BIN_ID = '6a1b5856ddf5aa59f779a799';
+const MASTER_KEY = '$2a$10$TiMHyeYeMYC4FMZ7.t6A2.xbk5rdphAJ1Tz/DtoRdAP6ceEDxeYZq';
+const API_BASE = 'https://api.jsonbin.io/v3/b';
 
 // State: { 'A_México': Set([1,3,5,...]), ... }
 let state = {};
+let saveTimer = null;
 
 function getKey(groupId, countryName) {
   return `${groupId}_${countryName}`;
 }
 
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      state = {};
-      for (const k in parsed) {
-        state[k] = new Set(parsed[k]);
-      }
-    }
-  } catch(e) { state = {}; }
+function showSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    saving: { text: '⏳ Guardando...', color: 'var(--accent)' },
+    saved:  { text: '☁️ Guardado', color: 'var(--green)' },
+    error:  { text: '❌ Error al guardar', color: 'var(--red)' },
+    loading:{ text: '⏳ Cargando...', color: 'var(--accent2)' },
+  };
+  const s = map[status] || {};
+  el.textContent = s.text;
+  el.style.color = s.color;
 }
 
-function saveState() {
-  const toSave = {};
-  for (const k in state) {
-    toSave[k] = [...state[k]];
+async function loadState() {
+  showSyncStatus('loading');
+  try {
+    const res = await fetch(`${API_BASE}/${BIN_ID}/latest`, {
+      headers: { 'X-Master-Key': MASTER_KEY }
+    });
+    const data = await res.json();
+    const raw = data.record?.stickers || {};
+    state = {};
+    for (const k in raw) {
+      state[k] = new Set(raw[k]);
+    }
+    showSyncStatus('saved');
+  } catch(e) {
+    // fallback localStorage
+    try {
+      const raw = localStorage.getItem('mundial2026_album');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        state = {};
+        for (const k in parsed) state[k] = new Set(parsed[k]);
+      }
+    } catch(e2) { state = {}; }
+    showSyncStatus('error');
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+}
+
+async function saveState() {
+  const toSave = {};
+  for (const k in state) toSave[k] = [...state[k]];
+
+  // always backup locally
+  localStorage.setItem('mundial2026_album', JSON.stringify(toSave));
+
+  showSyncStatus('saving');
+  try {
+    await fetch(`${API_BASE}/${BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': MASTER_KEY
+      },
+      body: JSON.stringify({ stickers: toSave })
+    });
+    showSyncStatus('saved');
+  } catch(e) {
+    showSyncStatus('error');
+  }
+}
+
+function saveStateDebounced() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveState(), 800);
 }
 
 function getCollected(key) {
@@ -432,7 +484,7 @@ function toggleSticker(key, num, stickerEl, rowEl) {
     stickerEl.classList.add('collected');
     showToast(`🎉 Lámina #${num} conseguida!`, false);
   }
-  saveState();
+  saveStateDebounced();
   updateStats();
   updateGroupStats(key.split('_')[0]);
   updateCountryRow(rowEl, key);
@@ -572,10 +624,10 @@ function filterGroups(query) {
   });
 }
 
-function confirmReset() {
+async function confirmReset() {
   if (confirm('¿Seguro que quieres reiniciar todo el progreso? Esta acción no se puede deshacer.')) {
     state = {};
-    saveState();
+    await saveState();
     buildUI();
     updateStats();
     showToast('Progreso reiniciado');
@@ -604,12 +656,12 @@ function importData() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
         state = {};
         for (const k in parsed) state[k] = new Set(parsed[k]);
-        saveState();
+        await saveState();
         buildUI();
         updateStats();
         GROUPS.forEach(g => updateGroupStats(g.id));
@@ -624,10 +676,12 @@ function importData() {
 }
 
 // Init
-loadState();
-buildUI();
-updateStats();
-GROUPS.forEach(g => updateGroupStats(g.id));
+(async () => {
+  await loadState();
+  buildUI();
+  updateStats();
+  GROUPS.forEach(g => updateGroupStats(g.id));
+})();
 </script>
 </body>
 </html>
