@@ -282,7 +282,7 @@
 
   <div class="stats-bar">
     <div class="stat">
-      <div class="stat-num total" id="stat-total">960</div>
+      <div class="stat-num total" id="stat-total">993</div>
       <div class="stat-label">Total láminas</div>
     </div>
     <div class="stat">
@@ -290,7 +290,7 @@
       <div class="stat-label">Conseguidas ✓</div>
     </div>
     <div class="stat">
-      <div class="stat-num missing" id="stat-missing">960</div>
+      <div class="stat-num missing" id="stat-missing">993</div>
       <div class="stat-label">Faltan</div>
     </div>
     <div class="stat">
@@ -302,7 +302,7 @@
   <div class="progress-wrap">
     <div class="progress-label">
       <span>Progreso del álbum</span>
-      <span id="prog-label">0 / 960</span>
+      <span id="prog-label">0 / 993</span>
     </div>
     <div class="progress-track">
       <div class="progress-fill" id="progress-fill" style="width:0%"></div>
@@ -314,6 +314,16 @@
   </div>
 
   <div class="groups-grid" id="groups-grid"></div>
+
+  <!-- OTRAS SECTION -->
+  <div id="extras-section" style="margin-top:40px;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--accent);white-space:nowrap;">✦ OTRAS ✦</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <div class="groups-grid" id="extras-grid"></div>
+  </div>
 </div>
 
 <script>
@@ -333,7 +343,33 @@ const GROUPS = [
 ];
 
 const STICKERS_PER_COUNTRY = 20;
+const EXTRAS = [
+  { name: 'FWC', flag: '🏆', count: 19 },
+  { name: 'Coca-Cola', flag: '🥤', count: 14 },
+];
+const EXTRAS_TOTAL = EXTRAS.reduce((sum, e) => sum + e.count, 0);
+const GRAND_TOTAL = 48 * STICKERS_PER_COUNTRY + EXTRAS_TOTAL;
 const BIN_ID = '6a1b5856ddf5aa59f779a799';
+
+const LEGACY_EXTRA_KEYS = {
+  'Otras_FWC': 'OTRAS_FWC',
+  'Otras_Coca-Cola': 'OTRAS_Coca-Cola',
+};
+
+function migrateLegacyExtraKeys(raw) {
+  for (const [oldKey, newKey] of Object.entries(LEGACY_EXTRA_KEYS)) {
+    if (raw[oldKey] && !raw[newKey]) raw[newKey] = raw[oldKey];
+  }
+  return raw;
+}
+
+function getGroupMax(group) {
+  return group.countries.length * STICKERS_PER_COUNTRY;
+}
+
+function getGroupTitle(group) {
+  return group.title ?? `GRUPO ${group.id}`;
+}
 const MASTER_KEY = '$2a$10$TiMHyeYeMYC4FMZ7.t6A2.xbk5rdphAJ1Tz/DtoRdAP6ceEDxeYZq';
 const API_BASE = 'https://api.jsonbin.io/v3/b';
 
@@ -363,7 +399,8 @@ async function loadState() {
       headers: { 'X-Master-Key': MASTER_KEY }
     });
     const data = await res.json();
-    const raw = data.record?.stickers || {};
+    let raw = data.record?.stickers || {};
+    migrateLegacyExtraKeys(raw);
     state = {};
     for (const k in raw) {
       state[k] = new Set(raw[k]);
@@ -371,15 +408,11 @@ async function loadState() {
     showSyncStatus('readonly');
   } catch(e) {
     try {
-      const raw = localStorage.getItem('mundial2026_album');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        state = {};
-        for (const k in parsed) state[k] = new Set(parsed[k]);
-        showSyncStatus('readonly');
-      } else {
-        showSyncStatus('error');
-      }
+      let raw = JSON.parse(localStorage.getItem('mundial2026_album') || '{}');
+      migrateLegacyExtraKeys(raw);
+      state = {};
+      for (const k in raw) state[k] = new Set(raw[k]);
+      showSyncStatus('readonly');
     } catch(e2) {
       state = {};
       showSyncStatus('error');
@@ -400,17 +433,17 @@ function updateGroupStats(groupId) {
   });
   const pill = document.getElementById(`group-pill-${groupId}`);
   if (pill) {
-    const max = group.countries.length * STICKERS_PER_COUNTRY;
-    pill.textContent = `${total}/${max}`;
+    pill.textContent = `${total}/${getGroupMax(group)}`;
   }
 }
 
 function updateStats() {
   let total = 0;
   for (const k in state) total += state[k].size;
-  const max = 48 * STICKERS_PER_COUNTRY;
+  const max = GRAND_TOTAL;
   const pct = Math.round((total / max) * 100);
 
+  document.getElementById('stat-total').textContent = max;
   document.getElementById('stat-collected').textContent = total;
   document.getElementById('stat-missing').textContent = max - total;
   document.getElementById('stat-pct').textContent = pct + '%';
@@ -418,96 +451,179 @@ function updateStats() {
   document.getElementById('prog-label').textContent = `${total} / ${max}`;
 }
 
+function buildGroupCard(group) {
+  const card = document.createElement('div');
+  card.className = 'group-card';
+  card.dataset.groupId = group.id;
+
+  const maxGroup = getGroupMax(group);
+  let groupTotal = 0;
+  group.countries.forEach(c => groupTotal += getCollected(getKey(group.id, c.name)));
+
+  card.innerHTML = `
+    <div class="group-header">
+      <span class="group-title">${getGroupTitle(group)}</span>
+      <span class="group-progress-pill" id="group-pill-${group.id}">${groupTotal}/${maxGroup}</span>
+    </div>
+  `;
+
+  group.countries.forEach(country => {
+    const key = getKey(group.id, country.name);
+    const collected = getCollected(key);
+
+    const row = document.createElement('div');
+    row.className = 'country-row';
+    row.dataset.key = key;
+    row.dataset.groupId = group.id;
+    row.innerHTML = `
+      <span class="flag">${country.flag}</span>
+      <span class="country-name">${country.name}</span>
+      <span class="country-mini-stats">
+        <span class="mini-collected">${collected}</span>
+        <span class="mini-sep">/</span>
+        <span class="mini-total">${STICKERS_PER_COUNTRY}</span>
+      </span>
+      <span class="chevron">›</span>
+    `;
+
+    const panel = document.createElement('div');
+    panel.className = 'stickers-panel';
+    panel.id = `panel-${key.replace(/[\s\.]/g,'_')}`;
+
+    for (let i = 1; i <= STICKERS_PER_COUNTRY; i++) {
+      const stickerEl = document.createElement('div');
+      stickerEl.className = 'sticker readonly' + (state[key]?.has(i) ? ' collected' : '');
+      stickerEl.textContent = i;
+      panel.appendChild(stickerEl);
+    }
+
+    row.addEventListener('click', () => {
+      const isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.stickers-panel.open').forEach(p => {
+        p.classList.remove('open');
+        p.previousElementSibling?.classList.remove('active');
+      });
+      if (!isOpen) {
+        panel.classList.add('open');
+        row.classList.add('active');
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+
+    card.appendChild(row);
+    card.appendChild(panel);
+  });
+
+  return card;
+}
+
 function buildUI() {
   const grid = document.getElementById('groups-grid');
   grid.innerHTML = '';
-
   GROUPS.forEach(group => {
+    grid.appendChild(buildGroupCard(group));
+  });
+}
+
+function buildExtras() {
+  const grid = document.getElementById('extras-grid');
+  grid.innerHTML = '';
+
+  EXTRAS.forEach(item => {
+    const key = `OTRAS_${item.name}`;
+    const collected = getCollected(key);
+
     const card = document.createElement('div');
     card.className = 'group-card';
-    card.dataset.groupId = group.id;
+    card.dataset.groupId = 'OTRAS';
 
-    const maxGroup = group.countries.length * STICKERS_PER_COUNTRY;
-    let groupTotal = 0;
-    group.countries.forEach(c => groupTotal += getCollected(getKey(group.id, c.name)));
-
+    const maxItem = item.count;
     card.innerHTML = `
-      <div class="group-header">
-        <span class="group-title">GRUPO ${group.id}</span>
-        <span class="group-progress-pill" id="group-pill-${group.id}">${groupTotal}/${maxGroup}</span>
+      <div class="group-header" style="background:linear-gradient(135deg,#0f172a,#1a1040);">
+        <span class="group-title" style="background:linear-gradient(90deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${item.flag} ${item.name}</span>
+        <span class="group-progress-pill" id="extra-pill-${item.name}">${collected}/${maxItem}</span>
       </div>
     `;
 
-    group.countries.forEach(country => {
-      const key = getKey(group.id, country.name);
-      const collected = getCollected(key);
+    const row = document.createElement('div');
+    row.className = 'country-row';
+    row.dataset.key = key;
+    row.dataset.groupId = 'OTRAS';
+    row.innerHTML = `
+      <span class="flag">${item.flag}</span>
+      <span class="country-name">${item.name}</span>
+      <span class="country-mini-stats">
+        <span class="mini-collected">${collected}</span>
+        <span class="mini-sep">/</span>
+        <span class="mini-total">${maxItem}</span>
+      </span>
+      <span class="chevron">›</span>
+    `;
 
-      const row = document.createElement('div');
-      row.className = 'country-row';
-      row.dataset.key = key;
-      row.dataset.groupId = group.id;
-      row.innerHTML = `
-        <span class="flag">${country.flag}</span>
-        <span class="country-name">${country.name}</span>
-        <span class="country-mini-stats">
-          <span class="mini-collected">${collected}</span>
-          <span class="mini-sep">/</span>
-          <span class="mini-total">${STICKERS_PER_COUNTRY}</span>
-        </span>
-        <span class="chevron">›</span>
-      `;
+    const panel = document.createElement('div');
+    panel.className = 'stickers-panel';
+    panel.id = `panel-OTRAS_${item.name.replace(/[\s\.\-]/g,'_')}`;
 
-      const panel = document.createElement('div');
-      panel.className = 'stickers-panel';
-      panel.id = `panel-${key.replace(/[\s\.]/g,'_')}`;
+    for (let i = 1; i <= item.count; i++) {
+      const stickerEl = document.createElement('div');
+      stickerEl.className = 'sticker readonly' + (state[key]?.has(i) ? ' collected' : '');
+      stickerEl.textContent = i;
+      panel.appendChild(stickerEl);
+    }
 
-      for (let i = 1; i <= STICKERS_PER_COUNTRY; i++) {
-        const stickerEl = document.createElement('div');
-        stickerEl.className = 'sticker readonly' + (state[key]?.has(i) ? ' collected' : '');
-        stickerEl.textContent = i;
-        panel.appendChild(stickerEl);
-      }
-
-      row.addEventListener('click', () => {
-        const isOpen = panel.classList.contains('open');
-        document.querySelectorAll('.stickers-panel.open').forEach(p => {
-          p.classList.remove('open');
-          p.previousElementSibling?.classList.remove('active');
-        });
-        if (!isOpen) {
-          panel.classList.add('open');
-          row.classList.add('active');
-          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+    row.addEventListener('click', () => {
+      const isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.stickers-panel.open').forEach(p => {
+        p.classList.remove('open');
+        p.previousElementSibling?.classList.remove('active');
       });
-
-      card.appendChild(row);
-      card.appendChild(panel);
+      if (!isOpen) {
+        panel.classList.add('open');
+        row.classList.add('active');
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
 
+    card.appendChild(row);
+    card.appendChild(panel);
     grid.appendChild(card);
   });
 }
 
+function filterCard(card, q) {
+  const groupId = card.dataset.groupId;
+  const rows = card.querySelectorAll('.country-row');
+  let hasMatch = false;
+  rows.forEach(row => {
+    const name = row.querySelector('.country-name').textContent.toLowerCase();
+    const groupLabel = groupId === 'OTRAS'
+      ? 'otras'
+      : getGroupTitle(GROUPS.find(g => g.id === groupId) || { id: groupId }).toLowerCase();
+    const match = !q || name.includes(q) || groupLabel.includes(q) || `grupo ${groupId}`.toLowerCase().includes(q);
+    row.style.display = match ? '' : 'none';
+    if (match) hasMatch = true;
+  });
+  card.style.display = hasMatch ? '' : 'none';
+  return hasMatch;
+}
+
 function filterGroups(query) {
   const q = query.toLowerCase().trim();
-  document.querySelectorAll('.group-card').forEach(card => {
-    const groupId = card.dataset.groupId;
-    const rows = card.querySelectorAll('.country-row');
-    let hasMatch = false;
-    rows.forEach(row => {
-      const name = row.querySelector('.country-name').textContent.toLowerCase();
-      const match = !q || name.includes(q) || `grupo ${groupId}`.includes(q);
-      row.style.display = match ? '' : 'none';
-      if (match) hasMatch = true;
-    });
-    card.style.display = hasMatch ? '' : 'none';
+  document.querySelectorAll('#groups-grid > .group-card').forEach(card => {
+    filterCard(card, q);
   });
+  let extrasMatch = false;
+  document.querySelectorAll('#extras-grid .group-card').forEach(card => {
+    if (filterCard(card, q)) extrasMatch = true;
+  });
+  const extrasSection = document.getElementById('extras-section');
+  if (extrasSection) extrasSection.style.display = extrasMatch ? '' : 'none';
 }
 
 (async () => {
   await loadState();
   buildUI();
+  buildExtras();
   updateStats();
   GROUPS.forEach(g => updateGroupStats(g.id));
 })();
