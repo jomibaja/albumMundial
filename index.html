@@ -374,6 +374,32 @@
     font-weight: 700;
   }
 
+  .modal-pendientes {
+    max-width: 520px;
+    text-align: left;
+    padding: 24px 28px;
+  }
+  .modal-copy-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .pendientes-text {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 0;
+  }
+
   @media (max-width: 600px) {
     .groups-grid { grid-template-columns: 1fr; }
     header h1 { font-size: 48px; }
@@ -485,6 +511,7 @@
     <button class="btn btn-accent" onclick="importData()">📥 Importar progreso</button>
     <a href="pendientes.html" class="btn btn-accent">👁 Ver Pendientes</a>
     <button class="btn btn-accent" onclick="openCompartirModal()">📲 Compartir pendientes</button>
+    <button class="btn btn-accent" onclick="openCopiarPendientesModal()">📋 Copiar Pendientes</button>
   </div>
 
   <div class="groups-grid" id="groups-grid"></div>
@@ -511,6 +538,14 @@
       <img id="qr-share" src="" alt="Código QR" width="200" height="200">
     </div>
     <div class="modal-url">jomibaja.github.io/albumMundial/pendientes.html</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="copiar-pendientes-modal" onclick="closeCopiarPendientesModal(event)">
+  <div class="modal modal-pendientes" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeCopiarPendientesModal()" aria-label="Cerrar">&times;</button>
+    <button class="btn btn-accent modal-copy-btn" onclick="copyPendientesToClipboard()">Copiar</button>
+    <pre class="pendientes-text" id="pendientes-text"></pre>
   </div>
 </div>
 
@@ -568,6 +603,23 @@ const BIN_ID = '6a1b5856ddf5aa59f779a799';
 const LEGACY_EXTRA_KEYS = {
   'Otras_FWC': 'OTRAS_FWC',
   'Otras_Coca-Cola': 'OTRAS_Coca-Cola',
+};
+
+const PENDIENTES_TITLE = 'Usa Méx Can 26';
+
+const COUNTRY_CODES = {
+  'México': 'MEX', 'Sudáfrica': 'RSA', 'Corea': 'KOR', 'Chequia': 'CZE',
+  'Canadá': 'CAN', 'Bosnia': 'BIH', 'Qatar': 'QAT', 'Suiza': 'SUI',
+  'Brasil': 'BRA', 'Marruecos': 'MAR', 'Haití': 'HAI', 'Escocia': 'SCO',
+  'EE.UU.': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'Turquía': 'TUR',
+  'Alemania': 'GER', 'Curazao': 'CUW', 'C. de Marfil': 'CIV', 'Ecuador': 'ECU',
+  'Países Bajos': 'NED', 'Japón': 'JPN', 'Suecia': 'SWE', 'Túnez': 'TUN',
+  'Bélgica': 'BEL', 'Egipto': 'EGY', 'Irán': 'IRN', 'N. Zelanda': 'NZL',
+  'España': 'ESP', 'Cabo Verde': 'CPV', 'Arabia S.': 'KSA', 'Uruguay': 'URU',
+  'Francia': 'FRA', 'Senegal': 'SEN', 'Irak': 'IRQ', 'Noruega': 'NOR',
+  'Argentina': 'ARG', 'Argelia': 'ALG', 'Austria': 'AUT', 'Jordania': 'JOR',
+  'Portugal': 'POR', 'RD Congo': 'COD', 'Uzbekistán': 'UZB', 'Colombia': 'COL',
+  'Inglaterra': 'ENG', 'Croacia': 'CRO', 'Ghana': 'GHA', 'Panamá': 'PAN',
 };
 
 function migrateLegacyExtraKeys(raw) {
@@ -922,7 +974,73 @@ function filterGroups(query) {
   if (extrasSection) extrasSection.style.display = extrasMatch ? '' : 'none';
 }
 
+function getPendingNumbers(key, max) {
+  const pending = [];
+  for (let i = 1; i <= max; i++) {
+    if (!state[key]?.has(i)) pending.push(i);
+  }
+  return pending;
+}
+
+function formatPendingLine(code, flag, numbers) {
+  if (!numbers.length) return null;
+  return `${code} ${flag} : ${numbers.join(', ')}`;
+}
+
+function buildPendientesText() {
+  const lines = [PENDIENTES_TITLE, 'Me faltan'];
+
+  const fwcLine = formatPendingLine('FWC', '🏆', getPendingNumbers('OTRAS_FWC', 19));
+  if (fwcLine) lines.push(fwcLine);
+
+  GROUPS.forEach(group => {
+    group.countries.forEach(country => {
+      const key = getKey(group.id, country.name);
+      const code = COUNTRY_CODES[country.name];
+      const line = formatPendingLine(code, country.flag, getPendingNumbers(key, STICKERS_PER_COUNTRY));
+      if (line) lines.push(line);
+    });
+  });
+
+  const cocLine = formatPendingLine('COC', '🥤', getPendingNumbers('OTRAS_Coca-Cola', 14));
+  if (cocLine) lines.push(cocLine);
+
+  if (lines.length === 2) {
+    lines.push('¡No te falta ninguna lámina!');
+  }
+
+  return lines.join('\n');
+}
+
 const COMPARTIR_URL = 'https://jomibaja.github.io/albumMundial/pendientes.html';
+
+function openCopiarPendientesModal() {
+  document.getElementById('pendientes-text').textContent = buildPendientesText();
+  document.getElementById('copiar-pendientes-modal').classList.add('open');
+}
+
+function closeCopiarPendientesModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('copiar-pendientes-modal').classList.remove('open');
+}
+
+async function copyPendientesToClipboard() {
+  const text = buildPendientesText();
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('📋 Copiado al portapapeles!');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Copiado al portapapeles!');
+  }
+}
 
 function openCompartirModal() {
   document.getElementById('qr-share').src =
@@ -936,7 +1054,9 @@ function closeCompartirModal(event) {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeCompartirModal();
+  if (e.key !== 'Escape') return;
+  closeCopiarPendientesModal();
+  closeCompartirModal();
 });
 
 function exportData() {
