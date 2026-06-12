@@ -400,6 +400,156 @@
     margin: 0;
   }
 
+  /* VIEW TABS */
+  .view-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .view-tab {
+    padding: 10px 32px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .view-tab:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+  .view-tab.active {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* DUPLICATE STICKER */
+  .sticker.dup-mode {
+    height: 54px;
+    flex-direction: column;
+    gap: 1px;
+    cursor: pointer;
+  }
+  .sticker .sticker-num {
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .sticker .dup-badge {
+    font-size: 10px;
+    font-weight: 800;
+    background: var(--accent);
+    color: #000;
+    border-radius: 6px;
+    padding: 0 5px;
+    line-height: 15px;
+    min-width: 18px;
+    text-align: center;
+    display: none;
+  }
+  .sticker .dup-badge.show {
+    display: inline-block;
+  }
+  .sticker.duplicate {
+    border-color: var(--accent);
+  }
+
+  /* DUPLICATE COUNTER MODAL */
+  .dup-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .dup-modal-overlay.open { display: flex; }
+  .dup-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    text-align: center;
+    max-width: 280px;
+    width: 100%;
+    position: relative;
+  }
+  .dup-modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+  .dup-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .dup-counter-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 22px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+  .dup-counter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(245,166,35,0.1);
+  }
+  .dup-counter-btn.minus:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(239,68,68,0.1);
+  }
+  .dup-counter-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--accent);
+    min-width: 50px;
+    text-align: center;
+  }
+  .dup-close-btn {
+    padding: 8px 24px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .dup-close-btn:hover {
+    border-color: var(--text);
+    color: var(--text);
+  }
+
   @media (max-width: 600px) {
     .groups-grid { grid-template-columns: 1fr; }
     header h1 { font-size: 48px; }
@@ -474,32 +624,52 @@
     <p id="sync-status" style="margin-top:8px;font-size:12px;font-weight:700;letter-spacing:1px;">⏳ Cargando...</p>
   </header>
 
-  <div class="stats-bar">
-    <div class="stat">
-      <div class="stat-num total" id="stat-total">993</div>
-      <div class="stat-label">Total láminas</div>
+  <div class="view-tabs">
+    <button class="view-tab active" data-mode="album" onclick="switchMode('album')">📒 Álbum</button>
+    <button class="view-tab" data-mode="duplicates" onclick="switchMode('duplicates')">🔄 Repetidas</button>
+  </div>
+
+  <div id="album-stats">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-num total" id="stat-total">993</div>
+        <div class="stat-label">Total láminas</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num collected" id="stat-collected">0</div>
+        <div class="stat-label">Conseguidas ✓</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num missing" id="stat-missing">993</div>
+        <div class="stat-label">Faltan</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color:var(--accent)" id="stat-pct">0%</div>
+        <div class="stat-label">Completado</div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-num collected" id="stat-collected">0</div>
-      <div class="stat-label">Conseguidas ✓</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num missing" id="stat-missing">993</div>
-      <div class="stat-label">Faltan</div>
-    </div>
-    <div class="stat">
-      <div class="stat-num" style="color:var(--accent)" id="stat-pct">0%</div>
-      <div class="stat-label">Completado</div>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Progreso del álbum</span>
+        <span id="prog-label">0 / 993</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
     </div>
   </div>
 
-  <div class="progress-wrap">
-    <div class="progress-label">
-      <span>Progreso del álbum</span>
-      <span id="prog-label">0 / 993</span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  <div id="dup-stats" style="display:none;">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-num" style="color:var(--accent)" id="stat-dup-total">0</div>
+        <div class="stat-label">Total repetidas</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" style="color:var(--accent2)" id="stat-dup-stickers">0</div>
+        <div class="stat-label">Láminas con repetidas</div>
+      </div>
     </div>
   </div>
 
@@ -512,6 +682,7 @@
     <a href="pendientes.html" class="btn btn-accent">👁 Ver Pendientes</a>
     <button class="btn btn-accent" onclick="openCompartirModal()">📲 Compartir pendientes</button>
     <button class="btn btn-accent" onclick="openCopiarPendientesModal()">📋 Copiar Pendientes</button>
+    <button class="btn btn-accent" onclick="openCopiarRepetidasModal()">🔁 Copiar Repetidas</button>
   </div>
 
   <div class="groups-grid" id="groups-grid"></div>
@@ -546,6 +717,26 @@
     <button class="modal-close" onclick="closeCopiarPendientesModal()" aria-label="Cerrar">&times;</button>
     <button class="btn btn-accent modal-copy-btn" onclick="copyPendientesToClipboard()">Copiar</button>
     <pre class="pendientes-text" id="pendientes-text"></pre>
+  </div>
+</div>
+
+<div class="modal-overlay" id="copiar-repetidas-modal" onclick="closeCopiarRepetidasModal(event)">
+  <div class="modal modal-pendientes" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeCopiarRepetidasModal()" aria-label="Cerrar">&times;</button>
+    <button class="btn btn-accent modal-copy-btn" onclick="copyRepetidasToClipboard()">Copiar</button>
+    <pre class="pendientes-text" id="repetidas-text"></pre>
+  </div>
+</div>
+
+<div class="dup-modal-overlay" id="dup-modal" onclick="closeDupModal(event)">
+  <div class="dup-modal" onclick="event.stopPropagation()">
+    <div class="dup-modal-title">Lámina <span id="dup-modal-label">#1</span></div>
+    <div class="dup-counter">
+      <button class="dup-counter-btn minus" onclick="adjustDupCount(-1)">−</button>
+      <div class="dup-counter-value" id="dup-counter-value">0</div>
+      <button class="dup-counter-btn plus" onclick="adjustDupCount(1)">+</button>
+    </div>
+    <button class="dup-close-btn" onclick="closeDupModal()">Cerrar</button>
   </div>
 </div>
 
@@ -643,6 +834,13 @@ const API_BASE = 'https://api.jsonbin.io/v3/b';
 let state = {};
 let saveTimer = null;
 
+// Duplicate state: { 'A_México': { '1': 2, '5': 1 }, ... }
+let dupState = {};
+let viewMode = 'album';
+let dupModalKey = null;
+let dupModalNum = null;
+let dupModalStickerEl = null;
+
 function getKey(groupId, countryName) {
   return `${groupId}_${countryName}`;
 }
@@ -674,6 +872,15 @@ async function loadState() {
     for (const k in raw) {
       state[k] = new Set(raw[k]);
     }
+    // Load duplicates
+    let rawDups = data.record?.duplicates || {};
+    dupState = {};
+    for (const k in rawDups) {
+      dupState[k] = {};
+      for (const numStr in rawDups[k]) {
+        dupState[k][numStr] = rawDups[k][numStr];
+      }
+    }
     showSyncStatus('saved');
   } catch(e) {
     // fallback localStorage
@@ -682,7 +889,16 @@ async function loadState() {
       migrateLegacyExtraKeys(raw);
       state = {};
       for (const k in raw) state[k] = new Set(raw[k]);
-    } catch(e2) { state = {}; }
+      // Load duplicates from localStorage
+      let rawDups = JSON.parse(localStorage.getItem('mundial2026_duplicates') || '{}');
+      dupState = {};
+      for (const k in rawDups) {
+        dupState[k] = {};
+        for (const numStr in rawDups[k]) {
+          dupState[k][numStr] = rawDups[k][numStr];
+        }
+      }
+    } catch(e2) { state = {}; dupState = {}; }
     showSyncStatus('error');
   }
 }
@@ -690,9 +906,17 @@ async function loadState() {
 async function saveState() {
   const toSave = {};
   for (const k in state) toSave[k] = [...state[k]];
-
-  // always backup locally
   localStorage.setItem('mundial2026_album', JSON.stringify(toSave));
+
+  const toSaveDups = {};
+  for (const k in dupState) {
+    const filtered = {};
+    for (const numStr in dupState[k]) {
+      if (dupState[k][numStr] > 0) filtered[numStr] = dupState[k][numStr];
+    }
+    if (Object.keys(filtered).length > 0) toSaveDups[k] = filtered;
+  }
+  localStorage.setItem('mundial2026_duplicates', JSON.stringify(toSaveDups));
 
   showSyncStatus('saving');
   try {
@@ -702,7 +926,7 @@ async function saveState() {
         'Content-Type': 'application/json',
         'X-Master-Key': MASTER_KEY
       },
-      body: JSON.stringify({ stickers: toSave })
+      body: JSON.stringify({ stickers: toSave, duplicates: toSaveDups })
     });
     showSyncStatus('saved');
   } catch(e) {
@@ -770,6 +994,99 @@ function updateStats() {
   document.getElementById('prog-label').textContent = `${total} / ${max}`;
 }
 
+function updateDuplicatesStats() {
+  let totalDups = 0;
+  let stickersWithDups = 0;
+  for (const k in dupState) {
+    for (const numStr in dupState[k]) {
+      const count = dupState[k][numStr];
+      if (count > 0) {
+        totalDups += count;
+        stickersWithDups++;
+      }
+    }
+  }
+  document.getElementById('stat-dup-total').textContent = totalDups;
+  document.getElementById('stat-dup-stickers').textContent = stickersWithDups;
+}
+
+function switchMode(mode) {
+  viewMode = mode;
+  document.querySelectorAll('.view-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.mode === mode);
+  });
+  const albumStats = document.getElementById('album-stats');
+  const dupStats = document.getElementById('dup-stats');
+  if (mode === 'album') {
+    albumStats.style.display = '';
+    dupStats.style.display = 'none';
+  } else {
+    albumStats.style.display = 'none';
+    dupStats.style.display = '';
+  }
+  buildUI();
+  buildExtras();
+  if (mode === 'album') {
+    updateStats();
+    GROUPS.forEach(g => updateGroupStats(g.id));
+  } else {
+    updateDuplicatesStats();
+  }
+  const searchValue = document.getElementById('search-input').value;
+  if (searchValue) filterGroups(searchValue);
+}
+
+function openDupModal(key, num, stickerEl) {
+  dupModalKey = key;
+  dupModalNum = num;
+  dupModalStickerEl = stickerEl;
+
+  if (!dupState[key]) dupState[key] = {};
+  const count = dupState[key][num] || 0;
+
+  document.getElementById('dup-modal-label').textContent = `#${num}`;
+  document.getElementById('dup-counter-value').textContent = count;
+  document.getElementById('dup-modal').classList.add('open');
+}
+
+function adjustDupCount(delta) {
+  if (!dupModalKey || !dupModalNum) return;
+  if (!dupState[dupModalKey]) dupState[dupModalKey] = {};
+  const current = dupState[dupModalKey][dupModalNum] || 0;
+  const next = Math.max(0, current + delta);
+  dupState[dupModalKey][dupModalNum] = next;
+
+  document.getElementById('dup-counter-value').textContent = next;
+
+  if (dupModalStickerEl) {
+    const badge = dupModalStickerEl.querySelector('.dup-badge');
+    if (badge) {
+      badge.textContent = next;
+      badge.classList.toggle('show', next > 0);
+    }
+    dupModalStickerEl.classList.toggle('duplicate', next > 0);
+  }
+
+  saveStateDebounced();
+  updateDuplicatesStats();
+}
+
+function closeDupModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('dup-modal').classList.remove('open');
+  dupModalKey = null;
+  dupModalNum = null;
+  dupModalStickerEl = null;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  closeCopiarPendientesModal();
+  closeCopiarRepetidasModal();
+  closeCompartirModal();
+  closeDupModal();
+});
+
 let toastTimer;
 function showToast(msg, removed = false) {
   const t = document.getElementById('toast');
@@ -820,13 +1137,25 @@ function buildGroupCard(group, { readonly = false } = {}) {
 
     for (let i = 1; i <= STICKERS_PER_COUNTRY; i++) {
       const stickerEl = document.createElement('div');
-      stickerEl.className = 'sticker' + (readonly ? ' readonly' : '') + (state[key]?.has(i) ? ' collected' : '');
-      stickerEl.textContent = i;
-      if (!readonly) {
-        stickerEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          toggleSticker(key, i, stickerEl, row);
-        });
+      if (viewMode === 'duplicates') {
+        const count = dupState[key]?.[i] || 0;
+        stickerEl.className = 'sticker dup-mode' + (readonly ? ' readonly' : '') + (count > 0 ? ' duplicate' : '');
+        stickerEl.innerHTML = `<span class="sticker-num">${i}</span><span class="dup-badge ${count > 0 ? 'show' : ''}">${count}</span>`;
+        if (!readonly) {
+          stickerEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDupModal(key, i, stickerEl);
+          });
+        }
+      } else {
+        stickerEl.className = 'sticker' + (readonly ? ' readonly' : '') + (state[key]?.has(i) ? ' collected' : '');
+        stickerEl.textContent = i;
+        if (!readonly) {
+          stickerEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSticker(key, i, stickerEl, row);
+          });
+        }
       }
       panel.appendChild(stickerEl);
     }
@@ -900,28 +1229,38 @@ function buildExtras() {
 
     for (let i = 1; i <= item.count; i++) {
       const stickerEl = document.createElement('div');
-      stickerEl.className = 'sticker' + (state[key]?.has(i) ? ' collected' : '');
-      stickerEl.textContent = i;
-      stickerEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!state[key]) state[key] = new Set();
-        const had = state[key].has(i);
-        if (had) {
-          state[key].delete(i);
-          stickerEl.classList.remove('collected');
-          showToast(`Lámina #${i} eliminada`, true);
-        } else {
-          state[key].add(i);
-          stickerEl.classList.add('collected');
-          showToast(`🎉 Lámina #${i} conseguida!`, false);
-        }
-        saveStateDebounced();
-        updateStats();
-        const pill = document.getElementById(`extra-pill-${item.name}`);
-        if (pill) pill.textContent = `${state[key].size}/${item.count}`;
-        const miniEl = row.querySelector('.mini-collected');
-        if (miniEl) miniEl.textContent = state[key].size;
-      });
+      if (viewMode === 'duplicates') {
+        const count = dupState[key]?.[i] || 0;
+        stickerEl.className = 'sticker dup-mode' + (count > 0 ? ' duplicate' : '');
+        stickerEl.innerHTML = `<span class="sticker-num">${i}</span><span class="dup-badge ${count > 0 ? 'show' : ''}">${count}</span>`;
+        stickerEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openDupModal(key, i, stickerEl);
+        });
+      } else {
+        stickerEl.className = 'sticker' + (state[key]?.has(i) ? ' collected' : '');
+        stickerEl.textContent = i;
+        stickerEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!state[key]) state[key] = new Set();
+          const had = state[key].has(i);
+          if (had) {
+            state[key].delete(i);
+            stickerEl.classList.remove('collected');
+            showToast(`Lámina #${i} eliminada`, true);
+          } else {
+            state[key].add(i);
+            stickerEl.classList.add('collected');
+            showToast(`🎉 Lámina #${i} conseguida!`, false);
+          }
+          saveStateDebounced();
+          updateStats();
+          const pill = document.getElementById(`extra-pill-${item.name}`);
+          if (pill) pill.textContent = `${state[key].size}/${item.count}`;
+          const miniEl = row.querySelector('.mini-collected');
+          if (miniEl) miniEl.textContent = state[key].size;
+        });
+      }
       panel.appendChild(stickerEl);
     }
 
@@ -1042,6 +1381,72 @@ async function copyPendientesToClipboard() {
   }
 }
 
+function buildRepetidasText() {
+  const lines = [PENDIENTES_TITLE, 'Repetidas'];
+
+  // FWC
+  const fwcNums = [];
+  for (let i = 1; i <= 19; i++) {
+    if (dupState['OTRAS_FWC']?.[i] > 0) fwcNums.push(i);
+  }
+  if (fwcNums.length) lines.push(`FWC 🏆 : ${fwcNums.join(', ')}`);
+
+  GROUPS.forEach(group => {
+    group.countries.forEach(country => {
+      const key = getKey(group.id, country.name);
+      const nums = [];
+      for (let i = 1; i <= STICKERS_PER_COUNTRY; i++) {
+        if (dupState[key]?.[i] > 0) nums.push(i);
+      }
+      if (nums.length) {
+        const code = COUNTRY_CODES[country.name];
+        lines.push(`${code} ${country.flag} : ${nums.join(', ')}`);
+      }
+    });
+  });
+
+  // Coca-Cola
+  const cocNums = [];
+  for (let i = 1; i <= 14; i++) {
+    if (dupState['OTRAS_Coca-Cola']?.[i] > 0) cocNums.push(i);
+  }
+  if (cocNums.length) lines.push(`COC 🥤 : ${cocNums.join(', ')}`);
+
+  if (lines.length === 2) {
+    lines.push('No tienes láminas repetidas');
+  }
+
+  return lines.join('\n');
+}
+
+function openCopiarRepetidasModal() {
+  document.getElementById('repetidas-text').textContent = buildRepetidasText();
+  document.getElementById('copiar-repetidas-modal').classList.add('open');
+}
+
+function closeCopiarRepetidasModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('copiar-repetidas-modal').classList.remove('open');
+}
+
+async function copyRepetidasToClipboard() {
+  const text = buildRepetidasText();
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('📋 Copiado al portapapeles!');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Copiado al portapapeles!');
+  }
+}
+
 function openCompartirModal() {
   document.getElementById('qr-share').src =
     'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(COMPARTIR_URL);
@@ -1053,16 +1458,18 @@ function closeCompartirModal(event) {
   document.getElementById('compartir-modal').classList.remove('open');
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  closeCopiarPendientesModal();
-  closeCompartirModal();
-});
-
 function exportData() {
   const toSave = {};
   for (const k in state) toSave[k] = [...state[k]];
-  const json = JSON.stringify(toSave, null, 2);
+  const dups = {};
+  for (const k in dupState) {
+    const filtered = {};
+    for (const n in dupState[k]) {
+      if (dupState[k][n] > 0) filtered[n] = dupState[k][n];
+    }
+    if (Object.keys(filtered).length > 0) dups[k] = filtered;
+  }
+  const json = JSON.stringify({ stickers: toSave, duplicates: dups }, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1084,14 +1491,36 @@ function importData() {
     reader.onload = async (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
-        migrateLegacyExtraKeys(parsed);
+        let stickerData, dupData;
+        // Support both old format (flat object) and new format ({ stickers, duplicates })
+        if (parsed.stickers) {
+          stickerData = parsed.stickers;
+          dupData = parsed.duplicates || {};
+        } else {
+          stickerData = parsed;
+          dupData = {};
+        }
+        migrateLegacyExtraKeys(stickerData);
         state = {};
-        for (const k in parsed) state[k] = new Set(parsed[k]);
+        for (const k in stickerData) state[k] = new Set(stickerData[k]);
+        dupState = {};
+        for (const k in dupData) {
+          dupState[k] = {};
+          for (const n in dupData[k]) {
+            dupState[k][n] = dupData[k][n];
+          }
+        }
         await saveState();
         buildUI();
         buildExtras();
         updateStats();
         GROUPS.forEach(g => updateGroupStats(g.id));
+        document.querySelectorAll('.view-tab').forEach(tab => {
+          tab.classList.toggle('active', tab.dataset.mode === 'album');
+        });
+        viewMode = 'album';
+        document.getElementById('album-stats').style.display = '';
+        document.getElementById('dup-stats').style.display = 'none';
         showToast('📥 Progreso importado!');
       } catch(err) {
         alert('Error al importar el archivo. Verifica que sea válido.');
