@@ -943,6 +943,16 @@ function getCollected(key) {
   return state[key] ? state[key].size : 0;
 }
 
+function getDupCount(key) {
+  let count = 0;
+  if (dupState[key]) {
+    for (const n in dupState[key]) {
+      if (dupState[key][n] > 0) count++;
+    }
+  }
+  return count;
+}
+
 function toggleSticker(key, num, stickerEl, rowEl) {
   if (!state[key]) state[key] = new Set();
   const had = state[key].has(num);
@@ -1069,6 +1079,33 @@ function adjustDupCount(delta) {
 
   saveStateDebounced();
   updateDuplicatesStats();
+
+  // Refresh country row and group pill
+  if (dupModalKey) {
+    const key = dupModalKey;
+    const rows = document.querySelectorAll(`.country-row[data-key="${CSS.escape ? CSS.escape(key) : key.replace(/"/g,'\\"')}"]`);
+    rows.forEach(row => {
+      const miniEl = row.querySelector('.mini-collected');
+      if (miniEl) miniEl.textContent = getDupCount(key);
+    });
+    if (key.startsWith('OTRAS_')) {
+      const extraName = key.replace('OTRAS_', '');
+      const item = EXTRAS.find(e => e.name === extraName);
+      if (item) {
+        const pill = document.getElementById(`extra-pill-${item.name}`);
+        if (pill) pill.textContent = `${getDupCount(key)}/${item.count}`;
+      }
+    } else {
+      const groupId = key.split('_')[0];
+      const group = GROUPS.find(g => g.id === groupId);
+      if (group) {
+        let total = 0;
+        group.countries.forEach(c => total += getDupCount(getKey(groupId, c.name)));
+        const pill = document.getElementById(`group-pill-${groupId}`);
+        if (pill) pill.textContent = `${total}/${getGroupMax(group)}`;
+      }
+    }
+  }
 }
 
 function closeDupModal(event) {
@@ -1103,7 +1140,8 @@ function buildGroupCard(group, { readonly = false } = {}) {
 
   const maxGroup = getGroupMax(group);
   let groupTotal = 0;
-  group.countries.forEach(c => groupTotal += getCollected(getKey(group.id, c.name)));
+  const countFn = viewMode === 'duplicates' ? getDupCount : getCollected;
+  group.countries.forEach(c => groupTotal += countFn(getKey(group.id, c.name)));
 
   card.innerHTML = `
     <div class="group-header">
@@ -1114,7 +1152,7 @@ function buildGroupCard(group, { readonly = false } = {}) {
 
   group.countries.forEach(country => {
     const key = getKey(group.id, country.name);
-    const collected = getCollected(key);
+    const collected = viewMode === 'duplicates' ? getDupCount(key) : getCollected(key);
 
     const row = document.createElement('div');
     row.className = 'country-row';
@@ -1194,7 +1232,7 @@ function buildExtras() {
 
   EXTRAS.forEach(item => {
     const key = `OTRAS_${item.name}`;
-    const collected = getCollected(key);
+    const collected = viewMode === 'duplicates' ? getDupCount(key) : getCollected(key);
 
     const card = document.createElement('div');
     card.className = 'group-card';
