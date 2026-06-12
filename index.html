@@ -550,6 +550,16 @@
     color: var(--text);
   }
 
+  .switch-wrap { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+  .switch { position:relative; width:40px; height:22px; }
+  .switch input { opacity:0; width:0; height:0; position:absolute; }
+  .slider { position:absolute; inset:0; background:var(--border); border-radius:99px; transition:background 0.2s; }
+  .slider::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:white; border-radius:50%; transition:transform 0.2s; }
+  .switch input:checked + .slider { background:var(--accent2); }
+  .switch input:checked + .slider::before { transform:translateX(18px); }
+  .switch-label { font-size:13px; font-weight:700; color:var(--muted); transition:color 0.2s; }
+  .switch-wrap:hover .switch-label { color:var(--text); }
+
   @media (max-width: 600px) {
     .groups-grid { grid-template-columns: 1fr; }
     header h1 { font-size: 48px; }
@@ -675,6 +685,15 @@
 
   <div class="actions">
     <input class="search-input" type="text" placeholder="🔍  Buscar país..." id="search-input" oninput="filterGroups(this.value)">
+  </div>
+  <div class="actions" id="hide-complete-wrap">
+    <label class="switch-wrap">
+      <div class="switch">
+        <input type="checkbox" id="hide-complete-toggle" onchange="toggleHideComplete(this.checked)">
+        <span class="slider"></span>
+      </div>
+      <span class="switch-label">Solo pendientes</span>
+    </label>
   </div>
   <div class="actions">
     <button class="btn btn-accent" onclick="exportData()">📤 Exportar progreso</button>
@@ -837,6 +856,7 @@ let saveTimer = null;
 // Duplicate state: { 'A_México': { '1': 2, '5': 1 }, ... }
 let dupState = {};
 let viewMode = 'album';
+let hideComplete = false;
 let dupModalKey = null;
 let dupModalNum = null;
 let dupModalStickerEl = null;
@@ -1020,11 +1040,22 @@ function updateDuplicatesStats() {
   document.getElementById('stat-dup-stickers').textContent = stickersWithDups;
 }
 
+function toggleHideComplete(checked) {
+  hideComplete = checked;
+  const searchValue = document.getElementById('search-input').value;
+  filterGroups(searchValue);
+}
+
 function switchMode(mode) {
   viewMode = mode;
   document.querySelectorAll('.view-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.mode === mode);
   });
+  hideComplete = false;
+  const toggle = document.getElementById('hide-complete-toggle');
+  if (toggle) toggle.checked = false;
+  const hideWrap = document.getElementById('hide-complete-wrap');
+  if (hideWrap) hideWrap.style.display = mode === 'album' ? '' : 'none';
   const albumStats = document.getElementById('album-stats');
   const dupStats = document.getElementById('dup-stats');
   if (mode === 'album') {
@@ -1330,9 +1361,20 @@ function filterCard(card, q) {
     const groupLabel = groupId === 'OTRAS'
       ? 'otras'
       : getGroupTitle(GROUPS.find(g => g.id === groupId) || { id: groupId }).toLowerCase();
-    const match = !q || name.includes(q) || groupLabel.includes(q) || `grupo ${groupId}`.toLowerCase().includes(q);
-    row.style.display = match ? '' : 'none';
-    if (match) hasMatch = true;
+    const matchesSearch = !q || name.includes(q) || groupLabel.includes(q) || `grupo ${groupId}`.toLowerCase().includes(q);
+    let isComplete = false;
+    if (hideComplete && viewMode === 'album') {
+      const mc = row.querySelector('.mini-collected');
+      const mt = row.querySelector('.mini-total');
+      if (mc && mt) {
+        const c = parseInt(mc.textContent);
+        const t = parseInt(mt.textContent);
+        isComplete = (c >= t && t > 0);
+      }
+    }
+    const visible = matchesSearch && !isComplete;
+    row.style.display = visible ? '' : 'none';
+    if (visible) hasMatch = true;
   });
   card.style.display = hasMatch ? '' : 'none';
   return hasMatch;
